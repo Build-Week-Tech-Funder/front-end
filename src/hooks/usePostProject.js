@@ -3,21 +3,26 @@ import { useSelector } from "react-redux";
 import authAxios from "../modules/authAxios";
 
 //	Posts new project and returns request state
-export default function usePostProject(pname, description) {
+export default function usePostProject(form) {
 	const [status, setStatus] = useState("idle");
 	const [data, setData] = useState(null);
 	const [error, setError] = useState(null);
 
-	const loginStatus = useSelector((state) => state.user.loginStatus);
 	const token = useSelector((state) => state.user.token);
+	const username = useSelector((state) => state.user.username);
 
 	const post = useCallback(() => {
 		setStatus("pending");
 		const api = authAxios(token);
 		api
 			.post("projects", {
-				pname: pname,
-				description: description,
+				pname: form.pname,
+				description: form.description,
+				location: form.location,
+				goal: form.goal,
+				image_url: form.image_url,
+				external_url: form.external_url,
+				fundraiser: username,
 			})
 			.then((res) => {
 				setStatus("success");
@@ -27,13 +32,7 @@ export default function usePostProject(pname, description) {
 				setStatus("error");
 				setError(err);
 			});
-	}, [token, pname, description]);
+	}, [token, form, username]);
 
-	useEffect(() => {
-		if (loginStatus && token && status === "idle") {
-			post();
-		}
-	}, [post, loginStatus, token, status]);
-
-	return { status, data, error };
+	return { post, status, data, error };
 }
