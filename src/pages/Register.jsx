@@ -1,73 +1,50 @@
+//	React
+import { useState, useEffect } from "react";
+import { useHistory } from "react-router-dom";
+import { useRegister } from "../hooks";
+//	Redux
+import { useSelector } from "react-redux";
+import { API_STATUS } from "../store";
+//	Bootstrap components
 import Container from "react-bootstrap/Container";
 import Form from "react-bootstrap/Form";
-import axios from "axios";
-import { useDispatch } from "react-redux";
-import { useHistory } from "react-router-dom";
-import { useState } from "react";
-import { setUsername, setToken, setLoginStatus } from "../state/userSlice";
 import Dropdown from "react-bootstrap/Dropdown";
 import DropdownButton from "react-bootstrap/DropdownButton";
 import Button from "react-bootstrap/Button";
 
 function Register() {
-	const dispatch = useDispatch();
-	const history = useHistory();
 	const [form, setForm] = useState({
 		username: "",
 		password: "",
 		role: 2,
 	});
-	const [registerError, setRegisterError] = useState(false);
+	const history = useHistory();
+	const register = useRegister(form);
+	const status = useSelector((state) => state.api.register.status);
 
-	const postNewUser = (username, password, role) => {
-		//	Role MUST be an integer, 1 for fundraiser and 2 for fundraiser
-		axios
-			.post("https://lamba-test.herokuapp.com/api/auth/register", {
-				username: username,
-				password: password,
-				role: role,
-			})
-			.then((res) => {
-				//	Login new user on registration success
-				axios
-					.post("https://lamba-test.herokuapp.com/api/auth/login", {
-						username: username,
-						password: password,
-					})
-					.then((res) => {
-						dispatch(setToken(res.data.token));
-						dispatch(setUsername(username));
-						dispatch(setLoginStatus(true));
-						history.push("/");
-					})
-					.catch((err) => {
-						console.error(err);
-						setRegisterError(true);
-					});
-			})
-			.catch((err) => {
-				console.error(err);
-				setRegisterError(true);
-			});
-	};
+	function validateForm() {
+		return form.username.length > 0 && form.password.length > 0;
+	}
 
 	const handleChange = (e) => {
 		const { name, value } = e.target;
 		setForm({ ...form, [name]: value });
 	};
 
-	const handleSubmit = (e) => {
-		e.preventDefault();
-		postNewUser(form.username, form.password, form.role);
-	};
-
 	const handleSelect = (eventKey) => {
 		setForm({ ...form, role: eventKey });
 	};
 
-	function validateForm() {
-		return form.username.length > 0 && form.password.length > 0;
-	}
+	const handleSubmit = (e) => {
+		e.preventDefault();
+		register();
+	};
+
+	useEffect(() => {
+		if (status === API_STATUS.SUCCESS) {
+			history.push("/");
+		}
+	}, [status, history]);
 
 	return (
 		<Container>
@@ -110,7 +87,7 @@ function Register() {
 				<Button block size="lg" type="submit" disabled={!validateForm()}>
 					Register
 				</Button>
-				{registerError ? "Error: Please try again later" : ""}
+				{status === API_STATUS.ERROR ? "Error: Please try again later" : ""}
 			</Form>
 		</Container>
 	);

@@ -1,13 +1,9 @@
 //	React
 import { useEffect } from "react";
+import { useGetAllProjects } from "./hooks";
 //	Redux
 import { useSelector, useDispatch } from "react-redux";
-import {
-	setUsername,
-	setToken,
-	setLoginStatus,
-	logoutUser,
-} from "./state/userSlice";
+import { setUsername, setToken, setLoginStatus, logoutUser } from "./store";
 //	React Router components
 import { Switch, Route, Link } from "react-router-dom";
 import AuthRoute from "./components/AuthRoute";
@@ -24,9 +20,9 @@ import Register from "./pages/Register";
 import User from "./pages/User";
 import Project from "./pages/Project";
 import NewProject from "./pages/NewProject";
+import UpdateProject from "./pages/UpdateProject";
 import Error404 from "./pages/Error404";
-//	Other
-import { useGetProjects } from "./hooks";
+//	Assets
 import githubLogo from "./assets/github.png";
 
 function App() {
@@ -35,8 +31,13 @@ function App() {
 	const username = useSelector((state) => state.user.username);
 	const token = useSelector((state) => state.user.token);
 
-	//	Fetches project list and dispatches to state on auth
-	useGetProjects();
+	//	Gets all projects and dispatches to store upon auth
+	const getAllProjects = useGetAllProjects();
+	useEffect(() => {
+		if (loginStatus) {
+			getAllProjects();
+		}
+	}, [getAllProjects, loginStatus]);
 
 	//	Checks localStorage for cached credentials and dispatches to store if found
 	const checkAuthCache = () => {
@@ -111,6 +112,9 @@ function App() {
 				</AuthRoute>
 				<AuthRoute exact path="/project/:id">
 					<Project />
+				</AuthRoute>
+				<AuthRoute exact path="/project/:id/update">
+					<UpdateProject />
 				</AuthRoute>
 				<AuthRoute exact path="/new-project">
 					<NewProject />

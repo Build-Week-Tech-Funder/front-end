@@ -11,5 +11,3 @@ export const projectsSlice = createSlice({
 		},
 	},
 });
-
-export const { setProjectList } = projectsSlice.actions;

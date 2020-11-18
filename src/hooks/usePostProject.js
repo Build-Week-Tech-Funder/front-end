@@ -1,19 +1,29 @@
-import { useState, useEffect, useCallback } from "react";
-import { useSelector } from "react-redux";
-import authAxios from "../modules/authAxios";
+import { useEffect, useCallback } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import useAuthAxios from "./useAuthAxios";
+import {
+	postProjectIdle,
+	postProjectPending,
+	postProjectSuccess,
+	postProjectError,
+	postProjectReset,
+} from "../store";
 
-//	Posts new project and returns request state
 export default function usePostProject(form) {
-	const [status, setStatus] = useState("idle");
-	const [data, setData] = useState(null);
-	const [error, setError] = useState(null);
+	const dispatch = useDispatch();
+	const api = useAuthAxios();
 
-	const token = useSelector((state) => state.user.token);
 	const username = useSelector((state) => state.user.username);
 
+	useEffect(() => {
+		dispatch(postProjectIdle());
+		return () => {
+			dispatch(postProjectReset());
+		};
+	}, [dispatch]);
+
 	const post = useCallback(() => {
-		setStatus("pending");
-		const api = authAxios(token);
+		dispatch(postProjectPending());
 		api
 			.post("projects", {
 				pname: form.pname,
@@ -25,14 +35,11 @@ export default function usePostProject(form) {
 				fundraiser: username,
 			})
 			.then((res) => {
-				setStatus("success");
-				setData(res.data);
+				dispatch(postProjectSuccess(res.data));
 			})
 			.catch((err) => {
-				setStatus("error");
-				setError(err);
+				dispatch(postProjectError(err));
 			});
-	}, [token, form, username]);
-
-	return { post, status, data, error };
+	}, [dispatch, api, form, username]);
+	return post;
 }

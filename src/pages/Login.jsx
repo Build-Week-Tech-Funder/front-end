@@ -1,20 +1,23 @@
+//	React
+import React, { useState, useEffect } from "react";
+import { useHistory, Link } from "react-router-dom";
+import { useLogin } from "../hooks";
+//	Redux
+import { useSelector } from "react-redux";
+import { API_STATUS } from "../store";
+//	Bootstrap components
 import Container from "react-bootstrap/Container";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
-import React, { useState } from "react";
-import axios from "axios";
-import { useDispatch } from "react-redux";
-import { setUsername, setToken, setLoginStatus } from "../state/userSlice";
-import { useHistory } from "react-router-dom";
 
 function Login() {
-	const dispatch = useDispatch();
-	const history = useHistory();
 	const [form, setForm] = useState({
 		username: "",
 		password: "",
 	});
-	const [loginError, setLoginError] = useState(false);
+	const history = useHistory();
+	const login = useLogin(form);
+	const status = useSelector((state) => state.api.login.status);
 
 	function validateForm() {
 		return form.username.length > 0 && form.password.length > 0;
@@ -27,22 +30,15 @@ function Login() {
 
 	function handleSubmit(evt) {
 		evt.preventDefault();
-		axios
-			.post("https://lamba-test.herokuapp.com/api/auth/login", {
-				username: form.username,
-				password: form.password,
-			})
-			.then((res) => {
-				dispatch(setToken(res.data.token));
-				dispatch(setUsername(form.username));
-				dispatch(setLoginStatus(true));
-				history.push("/");
-			})
-			.catch((err) => {
-				console.error(err);
-				setLoginError(true);
-			});
+		login();
 	}
+
+	//	Redirect user on successful login
+	useEffect(() => {
+		if (status === API_STATUS.SUCCESS) {
+			history.push("/");
+		}
+	}, [status, history]);
 
 	return (
 		<Container>
@@ -72,9 +68,14 @@ function Login() {
 					Login
 				</Button>
 			</Form>
-			{loginError
-				? "Error: Please verify your credentials are correct or try again later."
-				: ""}
+			{status === API_STATUS.ERROR ? (
+				<p>
+					Error: Please verify your credentials are correct or try again later.
+				</p>
+			) : (
+				""
+			)}
+			<Link to="/register">Need to register?</Link>
 		</Container>
 	);
 }

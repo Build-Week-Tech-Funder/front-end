@@ -1,6 +1,10 @@
 //	React
 import { useState, useEffect } from "react";
-import { usePostProject } from "../hooks";
+import { useParams } from "react-router-dom";
+import { useGetProject, usePutProject, useDeleteProject } from "../hooks";
+//	Redux
+import { useSelector } from "react-redux";
+import { API_STATUS } from "../store";
 //	Bootstrap components
 import Container from "react-bootstrap/Container";
 import Form from "react-bootstrap/Form";
@@ -17,7 +21,8 @@ const schema = yup.object().shape({
 	external_url: yup.string().required().url(),
 });
 
-function NewProject() {
+function UpdateProject() {
+	const { id } = useParams();
 	const [form, setForm] = useState({
 		pname: "",
 		description: "",
@@ -27,8 +32,33 @@ function NewProject() {
 		external_url: "",
 	});
 	const [formValid, setFormValid] = useState(false);
+	const getProject = useGetProject(id);
+	const putProject = usePutProject(id, form);
+	const deleteProject = useDeleteProject(id);
+	const getProjectStatus = useSelector((state) => state.api.getProject.status);
+	const getProjectResult = useSelector((state) => state.api.getProject.result);
 
-	const postProject = usePostProject(form);
+	//	Stopgap preventing infinite render loop
+	useEffect(() => {
+		if (getProjectStatus === API_STATUS.IDLE) {
+			getProject();
+		}
+	}, [getProject, getProjectStatus]);
+
+	//	When project is fetched, set data to local form state to allow user editing
+	useEffect(() => {
+		if (getProjectStatus === API_STATUS.SUCCESS) {
+			const project = { ...getProjectResult };
+			setForm({
+				pname: project.pname,
+				description: project.description,
+				location: project.location,
+				goal: project.goal,
+				image_url: project.image_url,
+				external_url: project.external_url,
+			});
+		}
+	}, [getProjectStatus, getProjectResult]);
 
 	const handleChange = (e) => {
 		const { name, value } = e.target;
@@ -38,11 +68,6 @@ function NewProject() {
 		});
 	};
 
-	const handleSubmit = (e) => {
-		e.preventDefault();
-		postProject();
-	};
-
 	const validate = () => {
 		schema.isValid(form).then((valid) => {
 			setFormValid(valid);
@@ -50,10 +75,20 @@ function NewProject() {
 	};
 	useEffect(validate, [form]);
 
+	const handleSubmit = (e) => {
+		e.preventDefault();
+		putProject();
+	};
+
+	const handleDelete = (e) => {
+		e.preventDefault();
+		deleteProject();
+	};
+
 	return (
 		<Container>
-			<h1>Create new project</h1>
-			<Form onSubmit={handleSubmit}>
+			<h1>Update Project # {id}</h1>
+			<Form>
 				<Form.Group controlId="name">
 					<Form.Label>Project name</Form.Label>
 					<Form.Control
@@ -104,12 +139,15 @@ function NewProject() {
 					/>
 				</Form.Group>
 
-				<Button type="submit" disabled={!formValid}>
+				<Button disabled={!formValid} onClick={handleSubmit}>
 					Submit
+				</Button>
+				<Button variant="danger" onClick={handleDelete}>
+					Delete
 				</Button>
 			</Form>
 		</Container>
 	);
 }
 
-export default NewProject;
+export default UpdateProject;
