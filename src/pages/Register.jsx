@@ -11,7 +11,9 @@ import Form from "react-bootstrap/Form";
 import Dropdown from "react-bootstrap/Dropdown";
 import DropdownButton from "react-bootstrap/DropdownButton";
 import Button from "react-bootstrap/Button";
-import registerSchema from '../validation/registerSchema'
+import registerSchema from "../validation/registerSchema";
+//	Other
+import * as yup from "yup";
 
 function Register() {
 	const [form, setForm] = useState({
@@ -19,20 +21,24 @@ function Register() {
 		password: "",
 		role: 2,
 	});
+	const [errors, setErrors] = useState();
 
-	const validateChange = e => {
-		yup.reach( registerSchema , e.target.name )
-		.validate( e.target.name )
-		.then(valid =>{
-			setErrors({
-				...errors, [e.target.name] : ""
+	const validateChange = (e) => {
+		yup
+			.reach(registerSchema, e.target.name)
+			.validate(e.target.name)
+			.then((valid) => {
+				setErrors({
+					...errors,
+					[e.target.name]: "",
+				});
+			})
+			.catch((err) => {
+				setErrors({
+					...errors,
+					[e.target.name]: err.errors[0],
+				});
 			});
-		})
-		.catch( err => {
-			setErrors({
-				...errors, [e.target.name] : err.errors[0]
-			});
-		});
 	};
 
 	const history = useHistory();
@@ -46,12 +52,13 @@ function Register() {
 	const handleChange = (e) => {
 		e.persist();
 		const newForm = {
-			...form, [e.target.name] : e.target.value
-		 };
-			validateChange(e);
-			setForm(newForm);
-			console.log(form)
-	}
+			...form,
+			[e.target.name]: e.target.value,
+		};
+		validateChange(e);
+		setForm(newForm);
+		console.log(form);
+	};
 
 	const handleSelect = (eventKey) => {
 		setForm({ ...form, role: eventKey });
