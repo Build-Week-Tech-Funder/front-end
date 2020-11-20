@@ -11,6 +11,7 @@ import Form from "react-bootstrap/Form";
 import Dropdown from "react-bootstrap/Dropdown";
 import DropdownButton from "react-bootstrap/DropdownButton";
 import Button from "react-bootstrap/Button";
+import registerSchema from '../validation/registerSchema'
 
 function Register() {
 	const [form, setForm] = useState({
@@ -18,6 +19,22 @@ function Register() {
 		password: "",
 		role: 2,
 	});
+
+	const validateChange = e => {
+		yup.reach( registerSchema , e.target.name )
+		.validate( e.target.name )
+		.then(valid =>{
+			setErrors({
+				...errors, [e.target.name] : ""
+			});
+		})
+		.catch( err => {
+			setErrors({
+				...errors, [e.target.name] : err.errors[0]
+			});
+		});
+	};
+
 	const history = useHistory();
 	const register = useRegister(form);
 	const status = useSelector((state) => state.api.register.status);
@@ -27,9 +44,14 @@ function Register() {
 	}
 
 	const handleChange = (e) => {
-		const { name, value } = e.target;
-		setForm({ ...form, [name]: value });
-	};
+		e.persist();
+		const newForm = {
+			...form, [e.target.name] : e.target.value
+		 };
+			validateChange(e);
+			setForm(newForm);
+			console.log(form)
+	}
 
 	const handleSelect = (eventKey) => {
 		setForm({ ...form, role: eventKey });
